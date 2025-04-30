@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ano simulator</title>
+  <style>
+    body {
+      background-color: #111;
+      font-family: 'Comic Sans MS', sans-serif;
+      color: #eee;
+      text-align: center;
+      padding-top: 50px;
+      position: relative;
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      cursor: pointer;
+      background-color: #fff;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      margin: 10px;
+      transition: transform 0.2s ease;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    #loading {
+      font-size: 20px;
+      color: #f0f0f0;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #inventory {
+      margin-top: 40px;
+      font-size: 20px;
+    }
+
+    .character {
+      margin: 10px;
+    }
+
+    .character img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+    }
+
+    .shiny {
+      animation: shiny-glow 1s infinite alternate;
+      text-shadow: 0 0 10px gold;
+    }
+
+    @keyframes shiny-glow {
+      from { filter: drop-shadow(0 0 5px gold); }
+      to { filter: drop-shadow(0 0 15px gold); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .bounce {
+      animation: bounce 1s ease infinite;
+    }
+
+    #eraseButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 16px;
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>apri l'ano di shibi</h1>
+  <button onclick="rollItem()">apri</button>
+  <div id="loading">sto rullando...</div>
+  <div id="result">clicca sul pulsante</div>
+  <div id="image"></div>
+  <div id="inventory"></div>
+  <button id="eraseButton" onclick="confirmReset()">cancella progresso</button>
+
+  <script>
+    const items = [
+      { name: "lilli", chance: 44, color: "gray", image: "https://i.imgur.com/XZ9BFJf.jpeg" },
+      { name: "mamma", chance: 30, color: "green", image: "https://i.imgur.com/y0nwHqo.jpeg" },
+      { name: "babbo", chance: 10, color: "blue", image: "https://i.imgur.com/Nr3S7Op.jpeg" },
+      { name: "nonna sbuffa", chance: 13.5, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
+      { name: "zia puzza", chance: 2.4, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
+      { name: "carmela cozzolino", chance: 0.1, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true }
+    ];
+
+    let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
+
+    function rollItem() {
+      const resultDiv = document.getElementById("result");
+      const imageDiv = document.getElementById("image");
+      const loadingDiv = document.getElementById("loading");
+
+      // Show loading, hide result and image
+      loadingDiv.style.display = "block";
+      resultDiv.innerText = "";
+      imageDiv.innerHTML = "";
+
+      setTimeout(() => {
+        loadingDiv.style.display = "none";
+
+        let roll = Math.random() * 100;
+        let cumulative = 0;
+
+        for (let item of items) {
+          cumulative += item.chance;
+          if (roll <= cumulative) {
+            if (!inventory[item.name]) inventory[item.name] = 0;
+            inventory[item.name]++;
+            localStorage.setItem("inventory", JSON.stringify(inventory));
+
+            resultDiv.innerText = `hai trovato ${item.name}`;
+            resultDiv.style.color = item.color;
+            resultDiv.className = item.shiny ? "shiny" : "";
+
+            const img = document.createElement("img");
+            img.src = item.image;
+            img.alt = item.name;
+            img.width = 150;
+            if (item.name === "carmela cozzolino") {
+              resultDiv.classList.add("bounce");
+              img.classList.add("bounce");
+            }
+
+            imageDiv.appendChild(img);
+            updateInventory();
+            break;
+          }
+        }
+      }, 1000);
+    }
+
+    function updateInventory() {
+      const invDiv = document.getElementById("inventory");
+      invDiv.innerHTML = "<h2>inventario</h2>";
+      for (let item of items) {
+        const count = inventory[item.name] || 0;
+        invDiv.innerHTML += `
+          <div class="character">
+            <img src="${item.image}" alt="${item.name}">
+            <div style="color:${item.color}">${item.name}: ${count}</div>
+          </div>
+        `;
+      }
+    }
+
+    function confirmReset() {
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerText = "sei sicuro che vuoi cancellare il tuo progresso?";
+      resultDiv.style.color = "red";
+      document.getElementById("image").innerHTML = "";
+      setTimeout(() => {
+        localStorage.removeItem("inventory");
+        inventory = {};
+        updateInventory();
+        resultDiv.innerText = "progresso cancellato!";
+        resultDiv.style.color = "#eee";
+      }, 5000);
+    }
+
+    updateInventory();
+  </script>
+</body>
+</html>
+<!-- This HTML file is a simple web-based game where users can "open a box" to find characters. The characters have different chances of being found, and the user's inventory is saved in local storage. The game includes animations and styles for a fun user experience. -->
+<!-- The game features a button to roll for an item, displays the result, and allows users to reset their progress. -->
