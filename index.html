@@ -82,6 +82,30 @@
       font-size: 16px;
       padding: 10px 20px;
     }
+
+    #adminPanel {
+      display: none;
+      margin-top: 30px;
+      background-color: #222;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .admin-controls {
+      margin-top: 20px;
+    }
+
+    .admin-controls select,
+    .admin-controls input[type="number"] {
+      padding: 10px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -92,6 +116,32 @@
   <div id="image"></div>
   <div id="inventory"></div>
   <button id="eraseButton" onclick="confirmReset()">cancella progresso</button>
+
+  <div style="margin-top:40px;">
+    <h3>lascia una recensione</h3>
+    <input id="secretInput" type="text" placeholder="scrivi qualcosa..." onkeydown="handleKey(event)">
+    <div id="reviewMessage" style="margin-top:10px; color:lightgreen;"></div>
+  </div>
+  
+
+  <div id="adminPanel">
+    <h2>pannello admin</h2>
+    <div class="admin-controls">
+      <select id="characterSelect">
+        <option value="lilli">lilli</option>
+        <option value="mamma">mamma</option>
+        <option value="babbo">babbo</option>
+        <option value="nonna sbuffa">nonna sbuffa</option>
+        <option value="zia puzza">zia puzza</option>
+        <option value="carmela cozzolino">carmela cozzolino</option>
+      </select>
+      <input type="number" id="amountInput" min="1" value="1">
+      <button onclick="addCharacter()">aggiungi</button>
+    </div>
+    <div class="admin-controls">
+      <button onclick="toggleAutoClicker()">attiva/disattiva autoclicker</button>
+    </div>
+  </div>
 
   <script>
     const items = [
@@ -104,13 +154,13 @@
     ];
 
     let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
+    let autoClickerInterval = null;
 
     function rollItem() {
       const resultDiv = document.getElementById("result");
       const imageDiv = document.getElementById("image");
       const loadingDiv = document.getElementById("loading");
 
-      // Show loading, hide result and image
       loadingDiv.style.display = "block";
       resultDiv.innerText = "";
       imageDiv.innerHTML = "";
@@ -139,6 +189,8 @@
             if (item.name === "carmela cozzolino") {
               resultDiv.classList.add("bounce");
               img.classList.add("bounce");
+            } else {
+              resultDiv.classList.remove("bounce");
             }
 
             imageDiv.appendChild(img);
@@ -177,9 +229,44 @@
       }, 5000);
     }
 
+    function handleKey(event) {
+  if (event.key === "Enter") {
+    const input = document.getElementById("secretInput");
+    const value = input.value.toLowerCase().trim();
+    const message = document.getElementById("reviewMessage");
+
+    if (value === "ano zozzo") {
+      document.getElementById("adminPanel").style.display = "block";
+      message.innerText = "";
+    } else {
+      message.innerText = "grazie per la recensione!";
+      setTimeout(() => message.innerText = "", 3000);
+    }
+
+    input.value = "";
+  }
+}
+
+
+    function addCharacter() {
+      const selected = document.getElementById("characterSelect").value;
+      const amount = parseInt(document.getElementById("amountInput").value);
+      if (!inventory[selected]) inventory[selected] = 0;
+      inventory[selected] += amount;
+      localStorage.setItem("inventory", JSON.stringify(inventory));
+      updateInventory();
+    }
+
+    function toggleAutoClicker() {
+      if (autoClickerInterval) {
+        clearInterval(autoClickerInterval);
+        autoClickerInterval = null;
+      } else {
+        autoClickerInterval = setInterval(rollItem, 500); // every 0.5 seconds
+      }
+    }
+
     updateInventory();
   </script>
 </body>
 </html>
-<!-- This HTML file is a simple web-based game where users can "open a box" to find characters. The characters have different chances of being found, and the user's inventory is saved in local storage. The game includes animations and styles for a fun user experience. -->
-<!-- The game features a button to roll for an item, displays the result, and allows users to reset their progress. -->
