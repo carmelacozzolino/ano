@@ -13,19 +13,14 @@
     }
 
     button {
-      padding: 15px 30px;
-      font-size: 18px;
+      padding: 10px 20px;
+      font-size: 16px;
       cursor: pointer;
       background-color: #fff;
       color: #000;
       border: none;
       border-radius: 5px;
       margin: 10px;
-      transition: transform 0.2s ease;
-    }
-
-    button:active {
-      transform: scale(0.95);
     }
 
     #result {
@@ -36,7 +31,6 @@
 
     #loading {
       font-size: 20px;
-      color: #f0f0f0;
       margin-top: 20px;
       display: none;
     }
@@ -48,11 +42,13 @@
 
     .character {
       margin: 10px;
+      display: block;
     }
 
     .character img {
       width: 80px;
       height: 80px;
+      object-fit: cover;
       border-radius: 10px;
     }
 
@@ -66,11 +62,6 @@
       to { filter: drop-shadow(0 0 15px gold); }
     }
 
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-15px); }
-    }
-
     .bounce {
       animation: bounce 1s ease infinite;
     }
@@ -79,58 +70,45 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      font-size: 16px;
-      padding: 10px 20px;
     }
 
-    #adminButton {
-      display: none;
-      position: fixed;
+    #adminPanelButton {
+      position: absolute;
       top: 10px;
       left: 10px;
-      font-size: 30px;
+      font-size: 24px;
       cursor: pointer;
-      z-index: 1000;
+      display: none;
     }
 
-    #adminModal {
+    #adminPopup {
       display: none;
       position: fixed;
-      top: 50%;
+      top: 50px;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translateX(-50%);
       background-color: #222;
-      padding: 30px;
-      border-radius: 12px;
-      z-index: 1001;
-      text-align: center;
-      width: 300px;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 999;
+      max-width: 90%;
     }
 
-    #adminModal h2 {
+    #adminPopup h2 {
       margin-top: 0;
     }
 
-    .closeModal {
+    #closePopup {
       position: absolute;
       top: 10px;
-      right: 15px;
-      font-size: 20px;
-      color: #fff;
+      right: 20px;
+      font-size: 18px;
       cursor: pointer;
     }
 
-    input[type="text"],
-    input[type="number"],
-    select {
-      padding: 10px;
-      font-size: 16px;
-      margin: 5px 0;
-    }
-
-    .admin-controls {
-      margin-top: 20px;
+    .chanceInput {
+      width: 60px;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -143,66 +121,53 @@
   <div id="inventory"></div>
   <button id="eraseButton" onclick="confirmReset()">cancella progresso</button>
 
-  <div style="margin-top:40px;">
+  <div>
     <h3>lascia una recensione</h3>
     <input id="secretInput" type="text" placeholder="scrivi qualcosa..." onkeydown="handleKey(event)">
     <div id="reviewMessage" style="margin-top:10px; color:lightgreen;"></div>
   </div>
 
-  <!-- 🛠️ Admin Button -->
-  <div id="adminButton" onclick="toggleAdminModal()">🛠️</div>
+  <div id="adminPanelButton" onclick="toggleAdminPopup()">🛠️</div>
 
-  <!-- Admin Modal -->
-  <div id="adminModal">
-    <div class="closeModal" onclick="toggleAdminModal()">✖</div>
+  <div id="adminPopup">
+    <div id="closePopup" onclick="toggleAdminPopup()">X</div>
     <h2>pannello admin</h2>
-    <div class="admin-controls">
-      <select id="characterSelect">
-        <option value="lilli">lilli</option>
-        <option value="mamma">mamma</option>
-        <option value="babbo">babbo</option>
-        <option value="nonna sbuffa">nonna sbuffa</option>
-        <option value="peppa">peppa</option>
-        <option value="zia puzza">zia puzza</option>
-        <option value="carmela cozzolino">carmela cozzolino</option>
-      </select>
+    <div id="chanceControls"></div>
+    <button onclick="saveChances()">Salva probabilità</button>
+    <button onclick="resetChancesToDefault()">Ripristina probabilità</button>
+    <div style="margin-top: 10px;">
+      <select id="characterSelect"></select>
       <input type="number" id="amountInput" min="1" value="1">
       <button onclick="addCharacter()">aggiungi</button>
     </div>
-    <div class="admin-controls">
-      <button onclick="toggleAutoClicker()">attiva/disattiva autoclicker</button>
-    </div>
-    <div class="admin-controls">
-      <button onclick="hideAdminIcon()">nascondi icona</button>
-    </div>
+    <button onclick="toggleAutoClicker()">autoclicker</button>
+    <button onclick="hideAdminIcon()">nascondi icona</button>
+    <div id="chanceWarning" style="color: red; margin-top: 10px;"></div>
   </div>
 
   <script>
-    const items = [
-      { name: "lilli", chance: 43, color: "gray", image: "https://i.imgur.com/XZ9BFJf.jpeg" },
+    const defaultItems = [
+      { name: "lilli", chance: 44, color: "gray", image: "https://i.imgur.com/XZ9BFJf.jpeg" },
       { name: "mamma", chance: 30, color: "green", image: "https://i.imgur.com/y0nwHqo.jpeg" },
       { name: "babbo", chance: 10, color: "blue", image: "https://i.imgur.com/Nr3S7Op.jpeg" },
-      { name: "nonna sbuffa", chance: 12, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
-      { name: "peppa", chance: 3, color: "pink", image: "https://i.imgur.com/paK8Obq.jpeg", porkIcon: true },
-      { name: "zia puzza", chance: 1.8, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
-      { name: "carmela cozzolino", chance: 0.2, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true }
+      { name: "nonna sbuffa", chance: 13.5, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
+      { name: "peppa", chance: 1.5, color: "pink", image: "https://i.imgur.com/paK8Obq.jpeg", extraIcon: "https://i.imgur.com/v9woUlU.jpeg" },
+      { name: "zia puzza", chance: 1, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
+      { name: "carmela cozzolino", chance: 0.1, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true }
     ];
 
+    let items = JSON.parse(localStorage.getItem("customChances")) || defaultItems;
     let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
     let autoClickerInterval = null;
     let confirmResetOnce = false;
 
     function rollItem() {
-      const resultDiv = document.getElementById("result");
-      const imageDiv = document.getElementById("image");
-      const loadingDiv = document.getElementById("loading");
-
-      loadingDiv.style.display = "block";
-      resultDiv.innerText = "";
-      imageDiv.innerHTML = "";
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("result").innerText = "";
+      document.getElementById("image").innerHTML = "";
 
       setTimeout(() => {
-        loadingDiv.style.display = "none";
+        document.getElementById("loading").style.display = "none";
 
         let roll = Math.random() * 100;
         let cumulative = 0;
@@ -214,22 +179,20 @@
             inventory[item.name]++;
             localStorage.setItem("inventory", JSON.stringify(inventory));
 
+            const resultDiv = document.getElementById("result");
             resultDiv.innerText = `hai trovato ${item.name}`;
             resultDiv.style.color = item.color;
             resultDiv.className = item.shiny ? "shiny" : "";
 
             const img = document.createElement("img");
             img.src = item.image;
-            img.alt = item.name;
             img.width = 150;
-            if (item.name === "carmela cozzolino") {
+            if (item.shiny) {
               resultDiv.classList.add("bounce");
               img.classList.add("bounce");
-            } else {
-              resultDiv.classList.remove("bounce");
             }
 
-            imageDiv.appendChild(img);
+            document.getElementById("image").appendChild(img);
             updateInventory();
             break;
           }
@@ -242,13 +205,12 @@
       invDiv.innerHTML = "<h2>inventario</h2>";
       for (let item of items) {
         const count = inventory[item.name] || 0;
-        let porkIcon = item.porkIcon
-          ? `<img src="https://i.imgur.com/v9woUlU.jpeg" style="width:20px; height:20px; object-fit:cover; vertical-align:middle; margin-left:5px; border-radius:3px;" alt="pork">`
-          : "";
         invDiv.innerHTML += `
           <div class="character">
-            <img src="${item.image}" alt="${item.name}">
-            <div style="color:${item.color}">${item.name}: ${count} ${porkIcon}</div>
+            <img src="${item.image}">
+            <div style="color:${item.color}" class="${item.shiny ? 'shiny' : ''}">
+              ${item.name} ${item.extraIcon ? `<img src="${item.extraIcon}" style="width: 15px; height: 15px; vertical-align: middle;">` : ''}: ${count}
+            </div>
           </div>
         `;
       }
@@ -276,22 +238,66 @@
       }
     }
 
-    function handleKey(event) {
-      if (event.key === "Enter") {
+    function handleKey(e) {
+      if (e.key === "Enter") {
         const input = document.getElementById("secretInput");
-        const value = input.value.toLowerCase().trim();
-        const message = document.getElementById("reviewMessage");
-
-        if (value === "ano zozzo") {
-          document.getElementById("adminButton").style.display = "block";
-          message.innerText = "";
-        } else {
-          message.innerText = "grazie per la recensione!";
-          setTimeout(() => message.innerText = "", 3000);
+        if (input.value.toLowerCase().trim() === "ano zozzo") {
+          document.getElementById("adminPanelButton").style.display = "block";
         }
-
+        document.getElementById("reviewMessage").innerText = "grazie per la recensione!";
         input.value = "";
       }
+    }
+
+    function toggleAdminPopup() {
+      const popup = document.getElementById("adminPopup");
+      popup.style.display = popup.style.display === "none" ? "block" : "none";
+      generateChanceInputs();
+    }
+
+    function hideAdminIcon() {
+      document.getElementById("adminPanelButton").style.display = "none";
+      document.getElementById("adminPopup").style.display = "none";
+    }
+
+    function generateChanceInputs() {
+      const container = document.getElementById("chanceControls");
+      const select = document.getElementById("characterSelect");
+      container.innerHTML = "";
+      select.innerHTML = "";
+      items.forEach((item, index) => {
+        container.innerHTML += `
+          <div>
+            ${item.name}: <input type="number" class="chanceInput" id="chance-${index}" value="${item.chance}" min="0" max="100">%
+          </div>
+        `;
+        select.innerHTML += `<option value="${item.name}">${item.name}</option>`;
+      });
+    }
+
+    function saveChances() {
+      let newItems = [...items];
+      let total = 0;
+      newItems.forEach((item, i) => {
+        const val = parseFloat(document.getElementById(`chance-${i}`).value);
+        item.chance = val;
+        total += val;
+      });
+      if (Math.abs(total - 100) > 0.1) {
+        document.getElementById("chanceWarning").innerText = "le probabilità devono sommare 100%";
+        return;
+      }
+      items = newItems;
+      localStorage.setItem("customChances", JSON.stringify(items));
+      document.getElementById("chanceWarning").innerText = "salvato!";
+    }
+
+    function resetChancesToDefault() {
+      items = JSON.parse(JSON.stringify(defaultItems));
+      localStorage.removeItem("customChances");
+      generateChanceInputs();
+      updateInventory();
+      document.getElementById("chanceWarning").innerText = "probabilità ripristinate!";
     }
 
     function addCharacter() {
@@ -312,23 +318,7 @@
       }
     }
 
-    function toggleAdminModal() {
-      const modal = document.getElementById("adminModal");
-      modal.style.display = (modal.style.display === "block") ? "none" : "block";
-    }
-
-    function hideAdminIcon() {
-      document.getElementById("adminButton").style.display = "none";
-      document.getElementById("adminModal").style.display = "none";
-    }
-
     updateInventory();
   </script>
 </body>
 </html>
-<!-- This HTML file is a simple web application that simulates opening a virtual "ano" (a type of container) to find characters. It includes an inventory system, an admin panel for adding characters, and a review input field. The design is playful and colorful, with animations for certain characters. The code uses JavaScript to handle the logic and interactions, including local storage for saving progress. -->
-<!-- The application features a button to roll for characters, a loading animation, and a confirmation prompt for resetting progress. The admin panel allows for adding characters and toggling an auto-clicker feature. The design is responsive and user-friendly, with a focus on fun and engagement. -->
-<!-- The code is structured with clear functions for each feature, making it easy to understand and modify. The use of CSS animations adds a dynamic touch to the user experience. Overall, this HTML file creates an interactive and entertaining web application. -->
-<!-- The application is designed to be visually appealing and engaging, with a focus on user interaction and fun. The use of images, colors, and animations enhances the overall experience, making it enjoyable for users. The code is well-organized and easy to follow, allowing for future enhancements and modifications. -->
-<!-- The application is a great example of how to create an interactive web experience using HTML, CSS, and JavaScript. It showcases the potential for creativity and engagement in web development, making it a fun project for both developers and users. -->
-<!-- The code is a complete and functional web application that can be run in any modern web browser. It provides a unique and entertaining experience for users, allowing them to interact with the characters and enjoy the playful design. The application is a testament to the creativity and possibilities of web development, making it a fun and engaging project. -->
