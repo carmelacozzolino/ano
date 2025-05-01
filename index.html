@@ -122,7 +122,6 @@
     <input id="secretInput" type="text" placeholder="scrivi qualcosa..." onkeydown="handleKey(event)">
     <div id="reviewMessage" style="margin-top:10px; color:lightgreen;"></div>
   </div>
-  
 
   <div id="adminPanel">
     <h2>pannello admin</h2>
@@ -155,6 +154,7 @@
 
     let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
     let autoClickerInterval = null;
+    let confirmResetOnce = false;
 
     function rollItem() {
       const resultDiv = document.getElementById("result");
@@ -217,36 +217,43 @@
 
     function confirmReset() {
       const resultDiv = document.getElementById("result");
-      resultDiv.innerText = "sei sicuro che vuoi cancellare il tuo progresso?";
-      resultDiv.style.color = "red";
-      document.getElementById("image").innerHTML = "";
-      setTimeout(() => {
+      if (!confirmResetOnce) {
+        resultDiv.innerText = "sei sicuro che vuoi cancellare il tuo progresso? clicca di nuovo per confermare.";
+        resultDiv.style.color = "red";
+        confirmResetOnce = true;
+        setTimeout(() => {
+          confirmResetOnce = false;
+          resultDiv.innerText = "clicca sul pulsante";
+          resultDiv.style.color = "#eee";
+        }, 5000);
+      } else {
         localStorage.removeItem("inventory");
         inventory = {};
         updateInventory();
         resultDiv.innerText = "progresso cancellato!";
         resultDiv.style.color = "#eee";
-      }, 5000);
+        document.getElementById("image").innerHTML = "";
+        confirmResetOnce = false;
+      }
     }
 
     function handleKey(event) {
-  if (event.key === "Enter") {
-    const input = document.getElementById("secretInput");
-    const value = input.value.toLowerCase().trim();
-    const message = document.getElementById("reviewMessage");
+      if (event.key === "Enter") {
+        const input = document.getElementById("secretInput");
+        const value = input.value.toLowerCase().trim();
+        const message = document.getElementById("reviewMessage");
 
-    if (value === "ano zozzo") {
-      document.getElementById("adminPanel").style.display = "block";
-      message.innerText = "";
-    } else {
-      message.innerText = "grazie per la recensione!";
-      setTimeout(() => message.innerText = "", 3000);
+        if (value === "ano zozzo") {
+          document.getElementById("adminPanel").style.display = "block";
+          message.innerText = "";
+        } else {
+          message.innerText = "grazie per la recensione!";
+          setTimeout(() => message.innerText = "", 3000);
+        }
+
+        input.value = "";
+      }
     }
-
-    input.value = "";
-  }
-}
-
 
     function addCharacter() {
       const selected = document.getElementById("characterSelect").value;
@@ -262,7 +269,7 @@
         clearInterval(autoClickerInterval);
         autoClickerInterval = null;
       } else {
-        autoClickerInterval = setInterval(rollItem, 500); // every 0.5 seconds
+        autoClickerInterval = setInterval(rollItem, 500);
       }
     }
 
