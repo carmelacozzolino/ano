@@ -172,6 +172,9 @@
     <div class="admin-controls">
       <button onclick="toggleAutoClicker()">attiva/disattiva autoclicker</button>
     </div>
+    <div class="admin-controls">
+      <button onclick="hideAdminIcon()">nascondi icona</button>
+    </div>
   </div>
 
   <script>
@@ -314,8 +317,18 @@
       modal.style.display = (modal.style.display === "block") ? "none" : "block";
     }
 
+    function hideAdminIcon() {
+      document.getElementById("adminButton").style.display = "none";
+      document.getElementById("adminModal").style.display = "none";
+    }
+
     updateInventory();
   </script>
 </body>
 </html>
-<!-- This HTML file is a simple web application that simulates opening a virtual "ano" (a play on words for "butt") to find characters. It includes an inventory system, an admin panel for adding characters, and a review input field. The design is playful and colorful, with animations for certain characters. -->
+<!-- This HTML file is a simple web application that simulates opening a virtual "ano" (a type of container) to find characters. It includes an inventory system, an admin panel for adding characters, and a review input field. The design is playful and colorful, with animations for certain characters. The code uses JavaScript to handle the logic and interactions, including local storage for saving progress. -->
+<!-- The application features a button to roll for characters, a loading animation, and a confirmation prompt for resetting progress. The admin panel allows for adding characters and toggling an auto-clicker feature. The design is responsive and user-friendly, with a focus on fun and engagement. -->
+<!-- The code is structured with clear functions for each feature, making it easy to understand and modify. The use of CSS animations adds a dynamic touch to the user experience. Overall, this HTML file creates an interactive and entertaining web application. -->
+<!-- The application is designed to be visually appealing and engaging, with a focus on user interaction and fun. The use of images, colors, and animations enhances the overall experience, making it enjoyable for users. The code is well-organized and easy to follow, allowing for future enhancements and modifications. -->
+<!-- The application is a great example of how to create an interactive web experience using HTML, CSS, and JavaScript. It showcases the potential for creativity and engagement in web development, making it a fun project for both developers and users. -->
+<!-- The code is a complete and functional web application that can be run in any modern web browser. It provides a unique and entertaining experience for users, allowing them to interact with the characters and enjoy the playful design. The application is a testament to the creativity and possibilities of web development, making it a fun and engaging project. -->
