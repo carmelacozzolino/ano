@@ -83,28 +83,54 @@
       padding: 10px 20px;
     }
 
-    #adminPanel {
+    #adminButton {
       display: none;
-      margin-top: 30px;
-      background-color: #222;
-      padding: 20px;
-      border-radius: 10px;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      font-size: 30px;
+      cursor: pointer;
+      z-index: 1000;
     }
 
-    input[type="text"] {
+    #adminModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #222;
+      padding: 30px;
+      border-radius: 12px;
+      z-index: 1001;
+      text-align: center;
+      width: 300px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+
+    #adminModal h2 {
+      margin-top: 0;
+    }
+
+    .closeModal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 20px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
       padding: 10px;
       font-size: 16px;
+      margin: 5px 0;
     }
 
     .admin-controls {
       margin-top: 20px;
-    }
-
-    .admin-controls select,
-    .admin-controls input[type="number"] {
-      padding: 10px;
-      font-size: 16px;
-      margin-right: 10px;
     }
   </style>
 </head>
@@ -123,7 +149,12 @@
     <div id="reviewMessage" style="margin-top:10px; color:lightgreen;"></div>
   </div>
 
-  <div id="adminPanel">
+  <!-- 🛠️ Admin Button -->
+  <div id="adminButton" onclick="toggleAdminModal()">🛠️</div>
+
+  <!-- Admin Modal -->
+  <div id="adminModal">
+    <div class="closeModal" onclick="toggleAdminModal()">✖</div>
     <h2>pannello admin</h2>
     <div class="admin-controls">
       <select id="characterSelect">
@@ -131,6 +162,7 @@
         <option value="mamma">mamma</option>
         <option value="babbo">babbo</option>
         <option value="nonna sbuffa">nonna sbuffa</option>
+        <option value="peppa">peppa</option>
         <option value="zia puzza">zia puzza</option>
         <option value="carmela cozzolino">carmela cozzolino</option>
       </select>
@@ -144,12 +176,13 @@
 
   <script>
     const items = [
-      { name: "lilli", chance: 44, color: "gray", image: "https://i.imgur.com/XZ9BFJf.jpeg" },
+      { name: "lilli", chance: 43, color: "gray", image: "https://i.imgur.com/XZ9BFJf.jpeg" },
       { name: "mamma", chance: 30, color: "green", image: "https://i.imgur.com/y0nwHqo.jpeg" },
       { name: "babbo", chance: 10, color: "blue", image: "https://i.imgur.com/Nr3S7Op.jpeg" },
-      { name: "nonna sbuffa", chance: 13.5, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
-      { name: "zia puzza", chance: 2.4, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
-      { name: "carmela cozzolino", chance: 0.1, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true }
+      { name: "nonna sbuffa", chance: 12, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
+      { name: "peppa", chance: 3, color: "pink", image: "https://i.imgur.com/paK8Obq.jpeg", porkIcon: true },
+      { name: "zia puzza", chance: 1.8, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
+      { name: "carmela cozzolino", chance: 0.2, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true }
     ];
 
     let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
@@ -206,10 +239,13 @@
       invDiv.innerHTML = "<h2>inventario</h2>";
       for (let item of items) {
         const count = inventory[item.name] || 0;
+        let porkIcon = item.porkIcon
+          ? `<img src="https://i.imgur.com/v9woUlU.jpeg" style="width:20px; height:20px; object-fit:cover; vertical-align:middle; margin-left:5px; border-radius:3px;" alt="pork">`
+          : "";
         invDiv.innerHTML += `
           <div class="character">
             <img src="${item.image}" alt="${item.name}">
-            <div style="color:${item.color}">${item.name}: ${count}</div>
+            <div style="color:${item.color}">${item.name}: ${count} ${porkIcon}</div>
           </div>
         `;
       }
@@ -244,7 +280,7 @@
         const message = document.getElementById("reviewMessage");
 
         if (value === "ano zozzo") {
-          document.getElementById("adminPanel").style.display = "block";
+          document.getElementById("adminButton").style.display = "block";
           message.innerText = "";
         } else {
           message.innerText = "grazie per la recensione!";
@@ -273,7 +309,13 @@
       }
     }
 
+    function toggleAdminModal() {
+      const modal = document.getElementById("adminModal");
+      modal.style.display = (modal.style.display === "block") ? "none" : "block";
+    }
+
     updateInventory();
   </script>
 </body>
 </html>
+<!-- This HTML file is a simple web application that simulates opening a virtual "ano" (a play on words for "butt") to find characters. It includes an inventory system, an admin panel for adding characters, and a review input field. The design is playful and colorful, with animations for certain characters. -->
