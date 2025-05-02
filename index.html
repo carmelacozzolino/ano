@@ -110,14 +110,37 @@
       width: 60px;
       margin-left: 10px;
     }
+
+    .craftMessage {
+      margin-top: 10px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <h1>apri l'ano di shibi</h1>
-  <button onclick="rollItem()">apri</button>
-  <div id="loading">sto rullando...</div>
-  <div id="result">clicca sul pulsante</div>
-  <div id="image"></div>
+
+  <div style="display: flex; justify-content: center; align-items: start; gap: 40px; flex-wrap: wrap;">
+    <!-- Roll system -->
+    <div>
+      <button onclick="rollItem()">apri</button>
+      <div id="loading">sto rullando...</div>
+      <div id="result">clicca sul pulsante</div>
+      <div id="image"></div>
+    </div>
+
+    <!-- Crafting system -->
+    <div id="craftingSection" style="background-color: #222; padding: 20px; border-radius: 10px; max-width: 300px; display: none;">
+      <h3 style="margin-top: 0;">crafta personaggi</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <select id="craft1" style="padding: 5px;"></select>
+        <select id="craft2" style="padding: 5px;"></select>
+        <button onclick="craftCharacter()">CRAFTA</button>
+        <div id="craftMessage" class="craftMessage"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="inventory"></div>
   <button id="eraseButton" onclick="confirmReset()">cancella progresso</button>
 
@@ -153,8 +176,14 @@
       { name: "nonna sbuffa", chance: 13.5, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
       { name: "peppa", chance: 1.5, color: "pink", image: "https://i.imgur.com/paK8Obq.jpeg", extraIcon: "https://i.imgur.com/v9woUlU.jpeg" },
       { name: "zia puzza", chance: 1, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
-      { name: "carmela cozzolino", chance: 0.1, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true }
+      { name: "carmela cozzolino", chance: 0.1, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true },
+      { name: "nonna puzza", chance: 0, color: "orange", image: "https://i.imgur.com/zPgNMgD.png" }
     ];
+
+    const recipes = {
+      "nonna sbuffa+zia puzza": "nonna puzza",
+      "zia puzza+nonna sbuffa": "nonna puzza"
+    };
 
     let items = JSON.parse(localStorage.getItem("customChances")) || defaultItems;
     let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
@@ -203,28 +232,103 @@
     function updateInventory() {
       const invDiv = document.getElementById("inventory");
       invDiv.innerHTML = "<h2>inventario</h2>";
+      let allNormalItemsFound = true;
+
       for (let item of items) {
         const count = inventory[item.name] || 0;
-        invDiv.innerHTML += `
-          <div class="character">
-            <img src="${item.image}">
-            <div style="color:${item.color}" class="${item.shiny ? 'shiny' : ''}">
-              ${item.name} ${item.extraIcon ? `<img src="${item.extraIcon}" style="width: 15px; height: 15px; vertical-align: middle;">` : ''}: ${count}
+        if (item.chance > 0 && count === 0) {
+          allNormalItemsFound = false;
+        }
+        
+        if (count > 0) {
+          invDiv.innerHTML += `
+            <div class="character">
+              <img src="${item.image}">
+              <div style="color:${item.color}" class="${item.shiny ? 'shiny' : ''}">
+                ${item.name} ${item.extraIcon ? `<img src="${item.extraIcon}" style="width: 15px; height: 15px; vertical-align: middle;">` : ''}: ${count}
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        }
+      }
+
+      if (allNormalItemsFound) {
+        document.getElementById("craftingSection").style.display = "block";
+      } else {
+        document.getElementById("craftingSection").style.display = "none";
+      }
+
+      updateCraftingOptions();
+    }
+
+    function updateCraftingOptions() {
+      const craft1 = document.getElementById("craft1");
+      const craft2 = document.getElementById("craft2");
+      craft1.innerHTML = "";
+      craft2.innerHTML = "";
+      for (let item of items) {
+        if ((inventory[item.name] || 0) > 0) {
+          const opt1 = document.createElement("option");
+          opt1.value = item.name;
+          opt1.text = item.name;
+          craft1.appendChild(opt1);
+
+          const opt2 = document.createElement("option");
+          opt2.value = item.name;
+          opt2.text = item.name;
+          craft2.appendChild(opt2);
+        }
+      }
+    }
+
+    function craftCharacter() {
+      const selected1 = document.getElementById("craft1").value;
+      const selected2 = document.getElementById("craft2").value;
+
+      if (selected1 === selected2) {
+        document.getElementById("craftMessage").innerText = "seleziona due personaggi diversi!";
+        return;
+      }
+
+      const recipeKey = `${selected1}+${selected2}`;
+
+      if (recipes[recipeKey]) {
+        const craftedCharacter = recipes[recipeKey];
+
+        if (!inventory[craftedCharacter]) {
+          inventory[craftedCharacter] = 0;
+        }
+
+        inventory[craftedCharacter]++;
+        localStorage.setItem("inventory", JSON.stringify(inventory));
+        document.getElementById("craftMessage").innerText = `hai craftato ${craftedCharacter}!`;
+
+        updateInventory();
+      } else {
+        document.getElementById("craftMessage").innerText = "combinazione non valida.";
+      }
+    }
+
+    function addCharacter() {
+      const characterName = document.getElementById("characterSelect").value;
+      const amount = parseInt(document.getElementById("amountInput").value) || 1;
+      if (characterName && amount > 0) {
+        if (!inventory[characterName]) inventory[characterName] = 0;
+        inventory[characterName] += amount;
+        localStorage.setItem("inventory", JSON.stringify(inventory));
+        updateInventory();
       }
     }
 
     function confirmReset() {
       const resultDiv = document.getElementById("result");
       if (!confirmResetOnce) {
-        resultDiv.innerText = "sei sicuro che vuoi cancellare il tuo progresso? clicca di nuovo per confermare.";
+        resultDiv.innerText = "vuoi davvero cancellare il tuo progresso? clicca di nuovo per confermare";
         resultDiv.style.color = "red";
         confirmResetOnce = true;
         setTimeout(() => {
           confirmResetOnce = false;
-          resultDiv.innerText = "clicca sul pulsante";
+          resultDiv.innerText = "apri l'ano di shibi";
           resultDiv.style.color = "#eee";
         }, 5000);
       } else {
@@ -253,72 +357,63 @@
       const popup = document.getElementById("adminPopup");
       popup.style.display = popup.style.display === "none" ? "block" : "none";
       generateChanceInputs();
+      populateCharacterSelect(); // Populate the character selection dropdown
     }
 
     function hideAdminIcon() {
       document.getElementById("adminPanelButton").style.display = "none";
-      document.getElementById("adminPopup").style.display = "none";
-    }
-
-    function generateChanceInputs() {
-      const container = document.getElementById("chanceControls");
-      const select = document.getElementById("characterSelect");
-      container.innerHTML = "";
-      select.innerHTML = "";
-      items.forEach((item, index) => {
-        container.innerHTML += `
-          <div>
-            ${item.name}: <input type="number" class="chanceInput" id="chance-${index}" value="${item.chance}" min="0" max="100">%
-          </div>
-        `;
-        select.innerHTML += `<option value="${item.name}">${item.name}</option>`;
-      });
     }
 
     function saveChances() {
-      let newItems = [...items];
-      let total = 0;
-      newItems.forEach((item, i) => {
-        const val = parseFloat(document.getElementById(`chance-${i}`).value);
-        item.chance = val;
-        total += val;
+      const chanceInputs = document.querySelectorAll(".chanceInput");
+      chanceInputs.forEach((input, index) => {
+        const newChance = parseFloat(input.value);
+        if (!isNaN(newChance)) {
+          items[index].chance = newChance;
+        }
       });
-      if (Math.abs(total - 100) > 0.1) {
-        document.getElementById("chanceWarning").innerText = "le probabilità devono sommare 100%";
-        return;
-      }
-      items = newItems;
       localStorage.setItem("customChances", JSON.stringify(items));
-      document.getElementById("chanceWarning").innerText = "salvato!";
-    }
-
-    function resetChancesToDefault() {
-      items = JSON.parse(JSON.stringify(defaultItems));
-      localStorage.removeItem("customChances");
-      generateChanceInputs();
-      updateInventory();
-      document.getElementById("chanceWarning").innerText = "probabilità ripristinate!";
-    }
-
-    function addCharacter() {
-      const selected = document.getElementById("characterSelect").value;
-      const amount = parseInt(document.getElementById("amountInput").value);
-      if (!inventory[selected]) inventory[selected] = 0;
-      inventory[selected] += amount;
-      localStorage.setItem("inventory", JSON.stringify(inventory));
       updateInventory();
     }
 
-    function toggleAutoClicker() {
-      if (autoClickerInterval) {
-        clearInterval(autoClickerInterval);
-        autoClickerInterval = null;
-      } else {
-        autoClickerInterval = setInterval(rollItem, 500);
-      }
+   // ...existing code...
+function resetChancesToDefault() {
+  items = JSON.parse(JSON.stringify(defaultItems)); // Deep copy of defaults
+  localStorage.setItem("customChances", JSON.stringify(items));
+  updateInventory();
+  generateChanceInputs(); // Update admin panel inputs
+}
+// ...existing code...
+
+    function generateChanceInputs() {
+      const controls = document.getElementById("chanceControls");
+      controls.innerHTML = "";
+      items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <label>${item.name} chance:</label>
+          <input type="number" class="chanceInput" value="${item.chance}" min="0" max="100" />
+        `;
+        controls.appendChild(div);
+      });
     }
 
-    updateInventory();
+    // Populate the character selection dropdown for the admin panel
+    function populateCharacterSelect() {
+      const characterSelect = document.getElementById("characterSelect");
+      characterSelect.innerHTML = ""; // Clear previous options
+
+      items.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.name;
+        option.textContent = item.name;
+        characterSelect.appendChild(option);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateInventory();
+    });
   </script>
 </body>
 </html>
