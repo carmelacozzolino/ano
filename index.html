@@ -10,6 +10,7 @@
       text-align: center;
       padding-top: 50px;
       position: relative;
+      transition: background 0.5s;
     }
 
     button {
@@ -23,16 +24,64 @@
       margin: 10px;
     }
 
-    #result {
+    #themeButton {
+      position: static;
+      margin-top: 10px;
+      left: unset;
+      bottom: unset;
+      transform: none;
+    }
+
+    .theme-normale {
+      --bg-color: #111;
+      --text-color: #eee;
+      --btn-bg: #fff;
+      --btn-text: #000;
+      --popup-bg: #222;
+    }
+
+    .theme-chiaro {
+      --bg-color: #f4f4f4;
+      --text-color: #111;
+      --btn-bg: #ddd;
+      --btn-text: #000;
+      --popup-bg: #fff;
+    }
+
+    .theme-arcobaleno {
+      --bg-color: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+      --text-color: #fff;
+      --btn-bg: rgba(255, 255, 255, 0.8);
+      --btn-text: #000;
+      --popup-bg: rgba(0,0,0,0.6);
+    }
+
+    .theme-lava {
+      --bg-color: #2c0f0f;
+      --text-color: #ffcccc;
+      --btn-bg: #990000;
+      --btn-text: #fff;
+      --popup-bg: #400000;
+    }
+
+    body {
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    button {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+    }
+
+    #adminPopup {
+      background-color: var(--popup-bg);
+    }
+
+    #result, #loading {
       margin-top: 30px;
       font-size: 24px;
       font-weight: bold;
-    }
-
-    #loading {
-      font-size: 20px;
-      margin-top: 20px;
-      display: none;
     }
 
     #inventory {
@@ -87,7 +136,6 @@
       top: 50px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: #222;
       padding: 20px;
       border-radius: 10px;
       z-index: 999;
@@ -117,20 +165,20 @@
     }
   </style>
 </head>
-<body>
+<body class="theme-normale">
   <h1>apri l'ano di shibi</h1>
 
   <div style="display: flex; justify-content: center; align-items: start; gap: 40px; flex-wrap: wrap;">
     <!-- Roll system -->
     <div>
       <button onclick="rollItem()">apri</button>
-      <div id="loading">sto rullando...</div>
+      <div id="loading" style="display:none;">sto rullando...</div>
       <div id="result">clicca sul pulsante</div>
       <div id="image"></div>
     </div>
 
     <!-- Crafting system -->
-    <div id="craftingSection" style="background-color: #222; padding: 20px; border-radius: 10px; max-width: 300px; display: none;">
+    <div id="craftingSection" style="background-color: var(--popup-bg); padding: 20px; border-radius: 10px; max-width: 300px; display: none;">
       <h3 style="margin-top: 0;">crafta personaggi</h3>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <select id="craft1" style="padding: 5px;"></select>
@@ -166,6 +214,7 @@
     <button onclick="toggleAutoClicker()">autoclicker</button>
     <button onclick="hideAdminIcon()">nascondi icona</button>
     <div id="chanceWarning" style="color: red; margin-top: 10px;"></div>
+    <button id="themeButton" onclick="cycleTheme()">🎨 Cambia tema</button>
   </div>
 
   <script>
@@ -175,17 +224,31 @@
       { name: "babbo", chance: 10, color: "blue", image: "https://i.imgur.com/Nr3S7Op.jpeg" },
       { name: "nonna sbuffa", chance: 13.5, color: "purple", image: "https://i.imgur.com/RF1vAuN.jpeg" },
       { name: "peppa", chance: 1.5, color: "pink", image: "https://i.imgur.com/paK8Obq.jpeg", extraIcon: "https://i.imgur.com/v9woUlU.jpeg" },
-      { name: "zia puzza", chance: 1, color: "gold", image: "https://i.imgur.com/i9vmLb3.png" },
+      { name: "zia puzza", chance: 1, color: "olive", image: "https://i.imgur.com/i9vmLb3.png" },
       { name: "carmela cozzolino", chance: 0.1, color: "gold", image: "https://i.imgur.com/6wzgV0M.jpeg", shiny: true },
-      { name: "nonna puzza", chance: 0, color: "orange", image: "https://i.imgur.com/zPgNMgD.png" }
+      { name: "nonna puzza", chance: 0, color: "slateblue", image: "https://i.imgur.com/zPgNMgD.png" },
+      { name: "pippi", chance: 0, color: "slateblue", image: "https://i.imgur.com/bgAGCAt.png" },
+      { name: "babbo sbuffo", chance: 0, color: "slateblue", image: "https://i.imgur.com/gh9qJiQ.png" }
     ];
 
     const recipes = {
       "nonna sbuffa+zia puzza": "nonna puzza",
-      "zia puzza+nonna sbuffa": "nonna puzza"
+      "zia puzza+nonna sbuffa": "nonna puzza",
+      "peppa+lilli": "pippi",
+      "lilli+peppa": "pippi",
+      "babbo+nonna sbuffa": "babbo sbuffo",
+      "nonna sbuffa+babbo": "babbo sbuffo"
     };
 
     let items = JSON.parse(localStorage.getItem("customChances")) || defaultItems;
+
+    // Ensure all defaultItems are present in items (for admin panel and crafting)
+    defaultItems.forEach(def => {
+      if (!items.find(it => it.name === def.name)) {
+        items.push(def);
+      }
+    });
+
     let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
     let autoClickerInterval = null;
     let confirmResetOnce = false;
@@ -197,7 +260,6 @@
 
       setTimeout(() => {
         document.getElementById("loading").style.display = "none";
-
         let roll = Math.random() * 100;
         let cumulative = 0;
 
@@ -239,7 +301,8 @@
         if (item.chance > 0 && count === 0) {
           allNormalItemsFound = false;
         }
-        
+
+        // Show all characters you have, even if chance is 0 (like pippi, babbo sbuffo)
         if (count > 0) {
           invDiv.innerHTML += `
             <div class="character">
@@ -252,12 +315,7 @@
         }
       }
 
-      if (allNormalItemsFound) {
-        document.getElementById("craftingSection").style.display = "block";
-      } else {
-        document.getElementById("craftingSection").style.display = "none";
-      }
-
+      document.getElementById("craftingSection").style.display = allNormalItemsFound ? "block" : "none";
       updateCraftingOptions();
     }
 
@@ -268,15 +326,10 @@
       craft2.innerHTML = "";
       for (let item of items) {
         if ((inventory[item.name] || 0) > 0) {
-          const opt1 = document.createElement("option");
-          opt1.value = item.name;
-          opt1.text = item.name;
-          craft1.appendChild(opt1);
-
-          const opt2 = document.createElement("option");
-          opt2.value = item.name;
-          opt2.text = item.name;
-          craft2.appendChild(opt2);
+          const opt1 = new Option(item.name, item.name);
+          const opt2 = new Option(item.name, item.name);
+          craft1.add(opt1);
+          craft2.add(opt2);
         }
       }
     }
@@ -294,15 +347,9 @@
 
       if (recipes[recipeKey]) {
         const craftedCharacter = recipes[recipeKey];
-
-        if (!inventory[craftedCharacter]) {
-          inventory[craftedCharacter] = 0;
-        }
-
-        inventory[craftedCharacter]++;
+        inventory[craftedCharacter] = (inventory[craftedCharacter] || 0) + 1;
         localStorage.setItem("inventory", JSON.stringify(inventory));
         document.getElementById("craftMessage").innerText = `hai craftato ${craftedCharacter}!`;
-
         updateInventory();
       } else {
         document.getElementById("craftMessage").innerText = "combinazione non valida.";
@@ -313,8 +360,7 @@
       const characterName = document.getElementById("characterSelect").value;
       const amount = parseInt(document.getElementById("amountInput").value) || 1;
       if (characterName && amount > 0) {
-        if (!inventory[characterName]) inventory[characterName] = 0;
-        inventory[characterName] += amount;
+        inventory[characterName] = (inventory[characterName] || 0) + amount;
         localStorage.setItem("inventory", JSON.stringify(inventory));
         updateInventory();
       }
@@ -329,14 +375,14 @@
         setTimeout(() => {
           confirmResetOnce = false;
           resultDiv.innerText = "apri l'ano di shibi";
-          resultDiv.style.color = "#eee";
+          resultDiv.style.color = "var(--text-color)";
         }, 5000);
       } else {
         localStorage.removeItem("inventory");
         inventory = {};
         updateInventory();
         resultDiv.innerText = "progresso cancellato!";
-        resultDiv.style.color = "#eee";
+        // Clear the last rolled character image
         document.getElementById("image").innerHTML = "";
         confirmResetOnce = false;
       }
@@ -357,7 +403,7 @@
       const popup = document.getElementById("adminPopup");
       popup.style.display = popup.style.display === "none" ? "block" : "none";
       generateChanceInputs();
-      populateCharacterSelect(); // Populate the character selection dropdown
+      populateCharacterSelect();
     }
 
     function hideAdminIcon() {
@@ -365,50 +411,49 @@
     }
 
     function saveChances() {
-      const chanceInputs = document.querySelectorAll(".chanceInput");
-      chanceInputs.forEach((input, index) => {
-        const newChance = parseFloat(input.value);
-        if (!isNaN(newChance)) {
-          items[index].chance = newChance;
-        }
+      document.querySelectorAll(".chanceInput").forEach((input, i) => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) items[i].chance = val;
       });
       localStorage.setItem("customChances", JSON.stringify(items));
       updateInventory();
     }
 
-   // ...existing code...
-function resetChancesToDefault() {
-  items = JSON.parse(JSON.stringify(defaultItems)); // Deep copy of defaults
-  localStorage.setItem("customChances", JSON.stringify(items));
-  updateInventory();
-  generateChanceInputs(); // Update admin panel inputs
-}
-// ...existing code...
+    function resetChancesToDefault() {
+      // Force clear custom chances so colors update
+      localStorage.removeItem("customChances");
+      items = JSON.parse(JSON.stringify(defaultItems));
+      updateInventory();
+      generateChanceInputs();
+    }
 
     function generateChanceInputs() {
       const controls = document.getElementById("chanceControls");
       controls.innerHTML = "";
       items.forEach((item, index) => {
         const div = document.createElement("div");
-        div.innerHTML = `
-          <label>${item.name} chance:</label>
-          <input type="number" class="chanceInput" value="${item.chance}" min="0" max="100" />
-        `;
+        div.innerHTML = `<label>${item.name} chance:</label>
+                         <input type="number" class="chanceInput" value="${item.chance}" min="0" max="100" />`;
         controls.appendChild(div);
       });
     }
 
-    // Populate the character selection dropdown for the admin panel
     function populateCharacterSelect() {
       const characterSelect = document.getElementById("characterSelect");
-      characterSelect.innerHTML = ""; // Clear previous options
-
+      characterSelect.innerHTML = "";
       items.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item.name;
-        option.textContent = item.name;
+        const option = new Option(item.name, item.name);
         characterSelect.appendChild(option);
       });
+    }
+
+    const themes = ['theme-normale', 'theme-chiaro', 'theme-arcobaleno', 'theme-lava'];
+    let currentTheme = 0;
+
+    function cycleTheme() {
+      document.body.classList.remove(themes[currentTheme]);
+      currentTheme = (currentTheme + 1) % themes.length;
+      document.body.classList.add(themes[currentTheme]);
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -417,3 +462,4 @@ function resetChancesToDefault() {
   </script>
 </body>
 </html>
+<!-- End of index.html -->
